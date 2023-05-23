@@ -109,10 +109,10 @@ Example spaces:
 
 Add first Spine router and Top of Rack routers.
 
-    juju deploy --bind "ptp0=tor0uplink0 ptp1=tor1uplink0 ptp2=tor2uplink0 space-0" cs:~openstack-charmers-next/quagga spine0
-    juju deploy --bind "ptp0=tor0uplink0 ptp1=tor0uplink1 lan0=rack0 space-0" cs:~openstack-charmers-next/quagga tor0
-    juju deploy --bind "ptp0=tor1uplink0 ptp1=tor1uplink1 lan0=rack1 space-0" cs:~openstack-charmers-next/quagga tor1
-    juju deploy --bind "ptp0=tor2uplink0 ptp1=tor2uplink1 lan0=rack2 space-0" cs:~openstack-charmers-next/quagga tor2
+    juju deploy --bind "ptp0=tor0uplink0 ptp1=tor1uplink0 ptp2=tor2uplink0 space-0" ch:frr spine0
+    juju deploy --bind "ptp0=tor0uplink0 ptp1=tor0uplink1 lan0=rack0 space-0" ch:frr tor0
+    juju deploy --bind "ptp0=tor1uplink0 ptp1=tor1uplink1 lan0=rack1 space-0" ch:frr tor1
+    juju deploy --bind "ptp0=tor2uplink0 ptp1=tor2uplink1 lan0=rack2 space-0" ch:frr tor2
 
     juju add-relation spine0:bgpserver tor0:bgpclient
     juju add-relation spine0:bgpserver tor1:bgpclient
@@ -122,7 +122,7 @@ Add first Spine router and Top of Rack routers.
 ## Scale out Usage
 Add the second Spine router and relate it to the existing Top of Rack routers.
 
-    juju deploy --bind "ptp0=tor0uplink1 ptp1=tor1uplink1 ptp2=tor2uplink1 space-0" cs:~openstack-charmers-next/quagga spine1
+    juju deploy --bind "ptp0=tor0uplink1 ptp1=tor1uplink1 ptp2=tor2uplink1 space-0" ch:frr spine1
 
     juju add-relation spine1:bgpserver tor0:bgpclient
     juju add-relation spine1:bgpserver tor1:bgpclient
@@ -137,7 +137,7 @@ At the current stage this charm is meant for simulation and testing purposes onl
 The charm infers required information from the environment it is deployed in
 and from relations with other charms.
 
-For available configuration options and usage take a look at [config.yaml](config.yaml).
+For available configuration options and usage take a look at [config.yaml](../config.yaml).
 
 
 # Contact Information
@@ -149,5 +149,5 @@ Icon made from "Zebra" (C) Nevit Dilmen licensed as Creative Commons BY-SA 3.0
 ## Upstream Project Name
 Quagga Software Routing Suite
 
-Website: http://www.nongnu.org/quagga/
-Bug tracker: https://bugzilla.quagga.net/
+Website: https://frrouting.org/
+Bug tracker: https://github.com/FRRouting/frr/issues

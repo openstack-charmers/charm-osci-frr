@@ -11,31 +11,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import charmhelpers.core as ch_core
 import charmhelpers.core.sysctl as ch_core_sysctl
 import charmhelpers.core.templating as ch_core_templating
 import charmhelpers.contrib.network.ip as ch_net_ip
 import charms.reactive as reactive
-import charm.quagga as quagga
+import charm.frr as frr
 import copy
 
 
-@reactive.when_not('quagga.started')
-def start_quagga():
+@reactive.when_not('frr.started')
+def start_frr():
     ch_core_sysctl.create("{'net.ipv4.ip_forward': 1}",
-                          '/etc/sysctl.d/42-charm-quagga.conf')
-    ch_core_templating.render('daemons', '/etc/quagga/daemons', {},
-                              owner='quagga', group='quagga', perms=0o640)
-    ch_core_templating.render('zebra.conf', '/etc/quagga/zebra.conf', {},
-                              owner='quagga', group='quagga', perms=0o640)
-    ch_core_templating.render('bgpd.conf', '/etc/quagga/bgpd.conf', {},
-                              owner='quagga', group='quagga', perms=0o640)
-    quagga.restart_services()
+                          '/etc/sysctl.d/42-charm-frr.conf')
+    ch_core_templating.render('daemons', '/etc/frr/daemons', {},
+                              owner='frr', group='frr', perms=0o640)
+    ch_core_templating.render('zebra.conf', '/etc/frr/zebra.conf', {},
+                              owner='frr', group='frr', perms=0o640)
+    ch_core_templating.render('bgpd.conf', '/etc/frr/bgpd.conf', {},
+                              owner='frr', group='frr', perms=0o640)
+    frr.restart_services()
 
     # Perform basic BGP configuration
-    quagga.vtysh(
+    frr.vtysh(
         ['conf t',
-         'router bgp {}'.format(quagga.get_asn()),
+         'router bgp {}'.format(frr.get_asn()),
          'bgp router-id {}'.format(
              ch_core.hookenv.unit_get('private-address')
              ),
@@ -47,8 +48,8 @@ def start_quagga():
         )
 
     ch_core.hookenv.status_set('active', 'Ready (AS Number {})'
-                               .format(quagga.get_asn()))
-    reactive.set_state('quagga.started')
+                               .format(frr.get_asn()))
+    reactive.set_state('frr.started')
 
 
 @reactive.when_any('endpoint.bgpserver.joined', 'endpoint.bgpclient.joined')
@@ -60,7 +61,7 @@ def publish_bgp_info():
         if endpoint is None:
             continue
         endpoint.publish_info(
-                asn=quagga.get_asn(),
+                asn=frr.get_asn(),
                 bindings=ch_core.hookenv.metadata()['extra-bindings'])
 
 
@@ -90,7 +91,7 @@ def bgp_relation_changed():
 
 
 def configure_link(bgp_info, remote_addr):
-    CONF_ROUTER_BGP = ['conf t', 'router bgp {}'.format(quagga.get_asn())]
+    CONF_ROUTER_BGP = ['conf t', 'router bgp {}'.format(frr.get_asn())]
     EXIT_ROUTER_BGP_WRITE = ['exit', 'exit', 'write']
 
     vtysh_cmd = copy.deepcopy(CONF_ROUTER_BGP)
@@ -106,7 +107,7 @@ def configure_link(bgp_info, remote_addr):
     if ch_net_ip.is_ipv6(remote_addr):
         vtysh_cmd += ['no neighbor {} activate'.format(remote_addr),
                       'address-family ipv6',
-                      # workaround for quagga redistribute connected
+                      # workaround for frr redistribute connected
                       # not working as expected for IPv6
                       'network {}'.format(
                           ch_net_ip.resolve_network_cidr(remote_addr)),
@@ -116,4 +117,4 @@ def configure_link(bgp_info, remote_addr):
     # Exit and write
     vtysh_cmd += EXIT_ROUTER_BGP_WRITE
     # Execute the command
-    quagga.vtysh(vtysh_cmd)
+    frr.vtysh(vtysh_cmd)

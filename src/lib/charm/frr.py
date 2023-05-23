@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import subprocess
 from charmhelpers.core import (
     hookenv,
@@ -18,12 +19,10 @@ from charmhelpers.core import (
 )
 import charms.reactive as reactive
 
-# Quagga services based on Ubuntu Release
-QUAGGA_SERVICES = {
-    'xenial': ['quagga'],
-    'bionic': ['zebra', 'bgpd'],
-    'disco': ['zebra', 'bgpd'],
-    'eoan': ['zebra', 'bgpd'],
+# FRR services based on Ubuntu Release
+FRR_SERVICES = {
+    'jammy': ['frr'],
+    'lunar': ['frr'],
 }
 
 
@@ -48,9 +47,12 @@ def vtysh(args):
 
 
 def restart_services():
-    """Determine which service names are required to be restarted based on
+    """Restart services.
+
+    Determine which service names are required to be restarted based on
     Ubuntu release and restart them.
     """
+
     ubuntu_release = host.lsb_release()['DISTRIB_CODENAME']
-    for service in QUAGGA_SERVICES[ubuntu_release]:
+    for service in FRR_SERVICES[ubuntu_release]:
         host.service('restart', service)

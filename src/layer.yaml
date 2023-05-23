@@ -4,6 +4,6 @@ includes:
 repo: 'https://github.com/openstack-charmers/charm-quagga.git'
 options:
   basic:
-    packages: ['quagga']
+    packages: ['frr']
     use_venv: true
     include_system_packages: true
