@@ -99,6 +99,11 @@ def configure_link(bgp_info, remote_addr):
             'DEBUG: configure neighbour {} '
             'remote-as {}'
             ''.format(remote_addr, bgp_info['asn']))
+    # See https://docs.frrouting.org/en/latest/bgp.html#clicmd-bgp-ebgp-requires-policy
+    # This option disables a requirement to have policies on routes with eBGP. Otherwise,
+    # a policy is required in order for routes to be accepted even if peering is
+    # successful.
+    vtysh_cmd += ['no bgp ebgp-requires-policy']
     vtysh_cmd += ['neighbor {} remote-as {}'
                   ''.format(remote_addr, bgp_info['asn'])]
     if bgp_info['passive']:
