@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import charm.frr as frr
+import charmhelpers.contrib.network.ip as ch_net_ip
 import charmhelpers.core as ch_core
 import charmhelpers.core.sysctl as ch_core_sysctl
 import charmhelpers.core.templating as ch_core_templating
-import charmhelpers.contrib.network.ip as ch_net_ip
 import charms.reactive as reactive
-import charm.frr as frr
 import copy
 
 
@@ -38,14 +38,12 @@ def start_frr():
         ['conf t',
          'router bgp {}'.format(frr.get_asn()),
          'bgp router-id {}'.format(
-             ch_core.hookenv.unit_get('private-address')
-             ),
+             ch_core.hookenv.unit_get('private-address')),
          'redistribute connected',
          'exit',
          'exit',
          'write',
-         ]
-        )
+         ])
 
     ch_core.hookenv.status_set('active', 'Ready (AS Number {})'
                                .format(frr.get_asn()))
@@ -55,14 +53,14 @@ def start_frr():
 @reactive.when_any('endpoint.bgpserver.joined', 'endpoint.bgpclient.joined')
 def publish_bgp_info():
     for endpoint in (
-            reactive.relations.endpoint_from_flag('endpoint.bgpserver.joined'),
-            reactive.relations.endpoint_from_flag('endpoint.bgpclient.joined'),
-            ):
+        reactive.relations.endpoint_from_flag('endpoint.bgpserver.joined'),
+        reactive.relations.endpoint_from_flag('endpoint.bgpclient.joined'),
+    ):
         if endpoint is None:
             continue
         endpoint.publish_info(
-                asn=frr.get_asn(),
-                bindings=ch_core.hookenv.metadata()['extra-bindings'])
+            asn=frr.get_asn(),
+            bindings=ch_core.hookenv.metadata()['extra-bindings'])
 
 
 @reactive.when_any('endpoint.bgpserver.changed', 'endpoint.bgpclient.changed')
@@ -72,7 +70,7 @@ def bgp_relation_changed():
                 'endpoint.bgpserver.changed'),
             reactive.relations.endpoint_from_flag(
                 'endpoint.bgpclient.changed'),
-            ):
+    ):
         if endpoint is None:
             continue
         for entry in endpoint.get_received_info():
@@ -84,9 +82,9 @@ def bgp_relation_changed():
             else:
                 # configure BGP neighbour on relation interface
                 relation_addr = ch_core.hookenv.relation_get(
-                        attribute='private-address',
-                        unit=entry['remote_unit_name'],
-                        rid=entry['relation_id'])
+                    attribute='private-address',
+                    unit=entry['remote_unit_name'],
+                    rid=entry['relation_id'])
                 configure_link(entry, relation_addr)
 
 
@@ -96,13 +94,13 @@ def configure_link(bgp_info, remote_addr):
 
     vtysh_cmd = copy.deepcopy(CONF_ROUTER_BGP)
     ch_core.hookenv.log(
-            'DEBUG: configure neighbour {} '
-            'remote-as {}'
-            ''.format(remote_addr, bgp_info['asn']))
-    # See https://docs.frrouting.org/en/latest/bgp.html#clicmd-bgp-ebgp-requires-policy
-    # This option disables a requirement to have policies on routes with eBGP. Otherwise,
-    # a policy is required in order for routes to be accepted even if peering is
-    # successful.
+        'DEBUG: configure neighbour {} '
+        'remote-as {}'
+        ''.format(remote_addr, bgp_info['asn']))
+    # https://docs.frrouting.org/en/latest/bgp.html#clicmd-bgp-ebgp-requires-policy  # noqa
+    # This option disables a requirement to have policies on routes with eBGP.
+    # Otherwise, a policy is required in order for routes to be accepted even
+    # if peering is successful.
     vtysh_cmd += ['no bgp ebgp-requires-policy']
     vtysh_cmd += ['neighbor {} remote-as {}'
                   ''.format(remote_addr, bgp_info['asn'])]
